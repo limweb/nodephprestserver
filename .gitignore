@@ -1,0 +1,15 @@
+logapp.log
+g.bat
+glog.bat
+gitk.bat
+gstatus.bat
+gpull.bat
+reset.bat
+.htaccess
+node_modules/*
+vendor/*
+php/vendor/*
+temp/
+nohup.out
+sftp-config.json
+composer.lock

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Mini-Social</title>
+        <link rel="stylesheet" href="/stylesheets/uploadfile.css" />
+        <style>
+            h2, h3{
+                background-color: lightgray;
+                padding: 5px;
+            }
+            .topic-item{
+                background-color: #f0f0f0;
+                padding: 5px;
+                margin-bottom: 10px;
+                border-radius: 7px;
+            }            
+            a.topic-title{
+                font-weight: bold;
+                font-size: 14pt;
+                text-decoration: none;
+            }
+            a.topic-title:hover{
+                background-color: #aaf0f0;*/
+            }
+
+            .topic-detail{
+                position:  inline-block;
+                min-width: 300px;
+                font-size: 12pt;
+            }
+            .topic-log{
+                display: inline-block;
+                text-align: right;
+                margin-right: 100px;
+            }
+            div.div-ident{
+                margin-left: 20px;    
+            }
+            #div-edit-avatar{
+                border: 10px;
+                padding: 10px;
+                background-color: lightgray;
+            }           
+            #div-edit-profile{
+                padding: 20px;
+                background-color: lightgray;
+            }
+            #img-avatar{
+                width: 150px;
+            }
+        </style>
+    </head>
+    <body>        
+        <h1>Mini-Social</h1>
+        <a href="/">Home</a>
+        <a href="/authen/login">Logout</a>
+        <h2>Profile</h2>
+        <form action="/profile/update" enctype="multipart/form-data" method="post">
+        <div id="div-edit-avatar">
+            <img id="img-avatar" src="/avatar/<%= avatar %>" /> 
+            <input type="file" name="avatar_file" />
+        </div>        
+        <div id="div-edit-profile">            
+           <div>
+                Login Name :
+                <input type="text" value="<%= loginname %>" 
+                name="txtLoginName" id="txtLoginName" /><br />
+                Display Name :
+                <input type="text" value="<%= displayname %>" 
+                name="txtDisplayName" id="txtDisplayName" />
+            </div>
+            <div>                   
+                Password : <input type="password" value="" 
+                name="txtPassword" id="txtPassword" /><br />
+                Confirm Password : <input type="password" 
+                value="" id="txtConfirmPassword" /><br />
+                <h4>ในกรณีไม่ต้องการเปลี่ยน password ไม่ต้องทำอะไรทั้งนั้นนะจ๊ะ</h4>
+            </div>
+            <input type="submit" value="Save Profile" />
+        </div>
+        </form>
+        <!-- -------------------------------------------------->
+        <div ng-app="MiniSocial" ng-controller="ProfileController" ng-init="loadHistory()">
+            <h2>Webboard History</h2>
+            <div class="div-ident">
+                <h3>Topic List</h3>
+                <div class="div-ident">
+                    <div class="topic-item" ng-repeat="t in TopicHistory">
+                    <a href="/#/topic/{{t.id}}" class="topic-title">{{t.title}}</a>
+                    <div class="topic-detail">
+                        {{t.display}}
+                        [ View : {{t.view_count}} | Reply : {{t.reply_count}} ]
+                    </div>
+                </div> 
+                </div>
+                <!-- -------------------------------------------------->
+                <h3>Comment List</h3>
+                <div class="div-ident">
+                    <div class="topic-item" ng-repeat="c in CommentHistory">
+                    <a href="/#/topic/{{c.id}}" class="topic-title">{{c.title}}</a>
+                    <div class="topic-detail">
+                        {{c.display}}
+                        [ View : {{c.view_count}} | Reply : {{c.reply_count}} ]
+                    </div>
+                </div>   
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<!--
+<script src="/javascripts/jquery.js"></script>
+<script src="/javascripts/jquery.uploadfile.js"></script>
+-->
+
+<script src="/javascripts/angular.js"></script>        
+<script>        
+    //var app = angular.module("MiniSocial", ["ngRoute"]);    
+    var app = angular.module("MiniSocial", []);    
+</script>                
+<script src="/javascripts/app/controller-profile.js"></script>
+        
+<!--
+<script>
+
+    $(function(){
+        
+        var uploadObj = $("#div-upload-image").uploadFile({
+            acceptFiles : "image/",
+            maxFileSize : 500*1024,
+            url : "/profile/upload_avatar"
+        });
+        
+        uploadObj.onSuccess = function(files,data,xhr,pd){
+            alert("OK");    
+        }
+        
+    });
+        
+</script>-->

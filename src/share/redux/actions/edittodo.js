@@ -1,0 +1,1 @@
+export default () => ({ type: 'edittodo', text: 'edittodo' })

@@ -1,0 +1,1 @@
+export default state => ({ counter: state.counter })
