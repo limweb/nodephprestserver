@@ -5,9 +5,12 @@
     require_once __DIR__.'/Singleton.php';
     require_once __DIR__.'/SocketServer.php';
     require_once __DIR__.'/Javascript.php';
+    require_once __DIR__.'/JwtService.php';
 
     use Illuminate\Database\Capsule\Manager as Capsule;
     use Illuminate\Database\Eloquent\Model as Model;
+    use Lcobucci\JWT\Signer\Key;
+    use Lcobucci\JWT\Signer\Rsa\Sha256;
     //============================= Server Start =======================================
 
     
@@ -17,6 +20,7 @@
         protected $usedb = false;   // use Eloquent db
         protected $useSocket = false; // Use Socket io with Elephone 
         protected $useJs = false;
+        protected $useJwt     = false;
 
         protected $debug = FALSE;   // debuf
         private   $start_time;  // use with debug to save total time
@@ -41,7 +45,10 @@
         protected $cookie = [];
         protected $maxtime = 0;  //mins time of session 0 = no use
         
-
+        //---jwt--------------------    
+        protected $privateKey = null; // new Key('file://../config/pv4096.key');
+        protected $publicKey  = null; // new Key('file://../config/pu4096.pub');
+        protected $signer     = null; //new Sha256();
         
         protected $format = null;  // null  xml
         protected $loginpath = '/index.php';
@@ -125,6 +132,7 @@
             'postLists'
         ];
 
+        use JwtServicetrait;
         use Singleton;
         use SocketServer;
         use DbService;
@@ -135,6 +143,8 @@
                 session_start();
             }
 
+
+            //------------------------- SESSION TIME OUT ----------------------
             if($this->maxtime > 0 ) {
                 if ( time() <  $_SESSION['session_time'] + $this->maxtime){
                     $_SESSION['session_time'] = time();
@@ -144,6 +154,7 @@
                     $_SESSION['session_time'] = time();
                 }
             }
+            //------------------------- SESSION TIME OUT ----------------------
 
         // $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
         // $_SERVER['REQUEST_URI'] = $_SERVER['REQUEST_URI'] ?? '/vr-services/MemberService.php/serverinfo';
@@ -152,6 +163,17 @@
         // $this->host = 'http://'.$_SERVER['HTTP_HOST'];
             $host = 'http://'.$_SERVER['HTTP_HOST'];
             $uri = $_SERVER['REQUEST_URI'];
+
+            //--------------------- JWT --- JSON WEB TOKEN -----------------------------
+            if($this->useJwt){
+                $this->privateKey = new Key('file://../config/pv4096.key');
+                $this->publicKey  = new Key('file://../config/pu4096.pub');
+                $this->signer     = new Sha256();
+                if($this->jwtchk()) {
+                    $this->updateJwtcookie();
+                }
+            }
+            //--------------------- JWT --- JSON WEB TOKEN -----------------------------
 
             $uri = explode("/", substr(@$uri, 1));
             $this->host = $host;

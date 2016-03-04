@@ -14,6 +14,7 @@ class  MemberService extends RestfulServer {
 		public function model(){
 			return new Member();
 		}
+
 }
 
 $memberservice = new MemberService();

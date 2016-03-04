@@ -16,10 +16,17 @@
     //---------------- react-------------------------------------start
     var React = require('react');
     var ReactDOMServer = require('react-dom/server');
-    var Test = require('../share/jsx/test');
+
+    import Test  from '../share/jsx/test.js';
+    // class Test extends React.Component {
+    //     render() {
+    //         return(<h1>TEST</h1>);
+    //     }
+    // }
+
     // class MyComponent extends React.Component {
     //   render() {
-    //     return <div>Hello World</div>;
+    //     return <div>Hello World jsx</div>;
     //   }
     // }
     // class MyComponent extends React.Component {
@@ -87,11 +94,11 @@
     app.get('/react', function(req, res) {
         // res.send(ReactDOMServer.renderToString(<MyComponent />));
         // res.send(ReactDOMServer.renderToString(<Test />));
-        // let c = ReactDOMServer.renderToString(<Test />);
+        let c = ReactDOMServer.renderToString(<Test />);
         // let c = ReactDOMServer.renderToString(React.createElement(MyComponent, null));
-        // console.log('react-com=',c);
-        // res.send(c);
-        res.send('TEST React');
+        console.log('react-com=',c);
+        res.send(c);
+        // res.send('TEST React');
     });
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({

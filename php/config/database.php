@@ -102,3 +102,5 @@ function consolelog($status = 200)  {
 } // end-of-check funtion exist
 
 require_once __DIR__.'/models.php';
+// Capsule::enableQuerylog();
+// dump(Capsule::getQueryLog());
