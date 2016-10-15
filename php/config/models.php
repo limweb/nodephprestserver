@@ -3,7 +3,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
-
+consolelog('Model App');
 class App  extends  Model  { 
 
         protected $table='apps';

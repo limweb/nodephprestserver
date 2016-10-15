@@ -1,13 +1,16 @@
 <?php
-require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/services/RestfulServer.php';
+require_once __DIR__ . '/./config/database.php';
+require_once __DIR__ . '/./libs/RestfulServer.php';
 
 class Indexs extends RestfulServer
 {
     public function __construct()
     {
-        // $this->socketserver = 'http://192.168.1.104:8888';
+        $this->socketserver = 'http://127.0.0.1:8888';
+        $this->hasSocket = true;
+        $this->useSocket = true;
         parent::__construct();
+        $this->setConnection();
     }
     public function __destruct()
     {
@@ -20,8 +23,12 @@ class Indexs extends RestfulServer
         echo 'Test';
     }
 
+    private function setStyle(){
+        return null;
+    }
+
     public function index()
-    {
+    {   
         consolelog('---------------index---------------start');
         $this->setStyle();
         $this->setJavascript();

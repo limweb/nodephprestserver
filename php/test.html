@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+<script>
+Sfdump = window.Sfdump || (function(doc) {
+    var refStyle = doc.createElement('style'),
+        rxEsc = /([.*+?^${}()|\[\]\/\\])/g,
+        idRx = /\bsf-dump-\d+-ref[012]\w+\b/;
+    doc.documentElement.firstChild.appendChild(refStyle);
+
+    function toggle(a) {
+        var s = a.nextSibling || {};
+        if ('sf-dump-compact' == s.className) {
+            a.lastChild.innerHTML = '&#9660;';
+            s.className = 'sf-dump-expanded';
+        } else if ('sf-dump-expanded' == s.className) {
+            a.lastChild.innerHTML = '&#9654;';
+            s.className = 'sf-dump-compact';
+        } else {
+            return false;
+        }
+        return true;
+    };
+    return function(root) {
+        root = doc.getElementById(root);
+
+        function a(e, f) {
+            root.addEventListener(e, function(e) {
+                if ('A' == e.target.tagName) {
+                    f(e.target, e);
+                } else if ('A' == e.target.parentNode.tagName) {
+                    f(e.target.parentNode, e);
+                }
+            });
+        };
+        root.addEventListener('mouseover', function(e) {
+            if ('' != refStyle.innerHTML) {
+                refStyle.innerHTML = '';
+            }
+        });
+        a('mouseover', function(a) {
+            if (a = idRx.exec(a.className)) {
+                refStyle.innerHTML = 'pre.sf-dump .' + a[0] + '{background-color: #B729D9; color: #FFF !important; border-radius: 2px}';
+            }
+        });
+        a('click', function(a, e) {
+            if (/\bsf-dump-toggle\b/.test(a.className)) {
+                e.preventDefault();
+                if (!toggle(a)) {
+                    var r = doc.getElementById(a.getAttribute('href').substr(1)),
+                        s = r.previousSibling,
+                        f = r.parentNode,
+                        t = a.parentNode;
+                    t.replaceChild(r, a);
+                    f.replaceChild(a, s);
+                    t.insertBefore(s, r);
+                    f = f.firstChild.nodeValue.match(indentRx);
+                    t = t.firstChild.nodeValue.match(indentRx);
+                    if (f && t && f[0] !== t[0]) {
+                        r.innerHTML = r.innerHTML.replace(new RegExp('^' + f[0].replace(rxEsc, '\\$1'), 'mg'), t[0]);
+                    }
+                    if ('sf-dump-compact' == r.className) {
+                        toggle(s);
+                    }
+                }
+            }
+        });
+        var indentRx = new RegExp('^(' + (root.getAttribute('data-indent-pad') || ' ').replace(rxEsc, '\\$1') + ')+', 'm'),
+            elt = root.getElementsByTagName('A'),
+            len = elt.length,
+            i = 0,
+            t = [];
+        while (i < len) t.push(elt[i++]);
+        elt = root.getElementsByTagName('SAMP');
+        len = elt.length;
+        i = 0;
+        while (i < len) t.push(elt[i++]);
+        root = t;
+        len = t.length;
+        i = t = 0;
+        while (i < len) {
+            elt = root[i];
+            if ("SAMP" == elt.tagName) {
+                elt.className = "sf-dump-expanded";
+                a = elt.previousSibling || {};
+                if ('A' != a.tagName) {
+                    a = doc.createElement('A');
+                    a.className = 'sf-dump-ref';
+                    elt.parentNode.insertBefore(a, elt);
+                } else {
+                    a.innerHTML += ' ';
+                }
+                a.innerHTML += '<span>&#9660;</span>';
+                a.className += ' sf-dump-toggle';
+                if ('sf-dump' != elt.parentNode.className) {
+                    toggle(a);
+                }
+            } else if ("sf-dump-ref" == elt.className && (a = elt.getAttribute('href'))) {
+                a = a.substr(1);
+                elt.className += ' ' + a;
+                if (/[\[{]$/.test(elt.previousSibling.nodeValue)) {
+                    a = a != elt.nextSibling.id && doc.getElementById(a);
+                    try {
+                        t = a.nextSibling;
+                        elt.appendChild(a);
+                        t.parentNode.insertBefore(a, t);
+                        if (/^[@#]/.test(elt.innerHTML)) {
+                            elt.innerHTML += ' <span>&#9654;</span>';
+                        } else {
+                            elt.innerHTML = '<span>&#9654;</span>';
+                            elt.className = 'sf-dump-ref';
+                        }
+                        elt.className += ' sf-dump-toggle';
+                    } catch (e) {
+                        if ('&' == elt.innerHTML.charAt(0)) {
+                            elt.innerHTML = '&#8230;';
+                            elt.className = 'sf-dump-ref';
+                        }
+                    }
+                }
+            }++i;
+        }
+    };
+})(document);
+</script>
+
+<style>
+pre.sf-dump {
+    display: block;
+    white-space: pre;
+    padding: 5px;
+}
+
+pre.sf-dump span {
+    display: inline;
+}
+
+pre.sf-dump .sf-dump-compact {
+    display: none;
+}
+
+pre.sf-dump abbr {
+    text-decoration: none;
+    border: none;
+    cursor: help;
+}
+
+pre.sf-dump a {
+    text-decoration: none;
+    cursor: pointer;
+    border: 0;
+    outline: none;
+}
+
+pre.sf-dump {
+    background-color: #18171B;
+    color: #FF8400;
+    line-height: 1.2em;
+    font: 12px Menlo, Monaco, Consolas, monospace;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    position: relative;
+    z-index: 100000
+}
+
+pre.sf-dump .sf-dump-num {
+    font-weight: bold;
+    color: #1299DA
+}
+
+pre.sf-dump .sf-dump-const {
+    font-weight: bold
+}
+
+pre.sf-dump .sf-dump-str {
+    font-weight: bold;
+    color: #56DB3A
+}
+
+pre.sf-dump .sf-dump-note {
+    color: #1299DA
+}
+
+pre.sf-dump .sf-dump-ref {
+    color: #A0A0A0
+}
+
+pre.sf-dump .sf-dump-public {
+    color: #FFFFFF
+}
+
+pre.sf-dump .sf-dump-protected {
+    color: #FFFFFF
+}
+
+pre.sf-dump .sf-dump-private {
+    color: #FFFFFF
+}
+
+pre.sf-dump .sf-dump-meta {
+    color: #B729D9
+}
+
+pre.sf-dump .sf-dump-key {
+    color: #56DB3A
+}
+
+pre.sf-dump .sf-dump-index {
+    color: #1299DA
+}
+</style>
+</head>
+<body>
+<pre class=sf-dump id=sf-dump-967705043 data-indent-pad="  "><span class=sf-dump-note>Indexs</span> {<a class=sf-dump-ref>#2</a><samp>
+  #<span class=sf-dump-protected title="Protected property">usedb</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">useSocket</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">useJs</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">useJwt</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">debug</span>: <span class=sf-dump-const>false</span>
+  -<span class=sf-dump-private title="Private property defined in class:&#10;`RestfulServer`">start_time</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">host</span>: "<span class=sf-dump-str title="21 characters">http://127.0.0.1:8080</span>"
+  #<span class=sf-dump-protected title="Protected property">file</span>: "<span class=sf-dump-str title="54 characters">C:\works\tlen\nodephpserver\php\libs\RestfulServer.php</span>"
+  #<span class=sf-dump-protected title="Protected property">server</span>: <span class=sf-dump-note>array:24</span> [<samp>
+    "<span class=sf-dump-key>DOCUMENT_ROOT</span>" => "<span class=sf-dump-str title="31 characters">C:\works\tlen\nodephpserver\php</span>"
+    "<span class=sf-dump-key>REMOTE_ADDR</span>" => "<span class=sf-dump-str title="9 characters">127.0.0.1</span>"
+    "<span class=sf-dump-key>REMOTE_PORT</span>" => "<span class=sf-dump-str title="5 characters">61117</span>"
+    "<span class=sf-dump-key>SERVER_SOFTWARE</span>" => "<span class=sf-dump-str title="28 characters">PHP 5.5.0 Development Server</span>"
+    "<span class=sf-dump-key>SERVER_PROTOCOL</span>" => "<span class=sf-dump-str title="8 characters">HTTP/1.1</span>"
+    "<span class=sf-dump-key>SERVER_NAME</span>" => "<span class=sf-dump-str title="7 characters">0.0.0.0</span>"
+    "<span class=sf-dump-key>SERVER_PORT</span>" => "<span class=sf-dump-str title="4 characters">8080</span>"
+    "<span class=sf-dump-key>REQUEST_URI</span>" => "<span class=sf-dump-str title="21 characters">/index.php/serverinfo</span>"
+    "<span class=sf-dump-key>REQUEST_METHOD</span>" => "<span class=sf-dump-str title="3 characters">GET</span>"
+    "<span class=sf-dump-key>SCRIPT_NAME</span>" => "<span class=sf-dump-str title="10 characters">/index.php</span>"
+    "<span class=sf-dump-key>SCRIPT_FILENAME</span>" => "<span class=sf-dump-str title="41 characters">C:\works\tlen\nodephpserver\php\index.php</span>"
+    "<span class=sf-dump-key>PATH_INFO</span>" => "<span class=sf-dump-str title="11 characters">/serverinfo</span>"
+    "<span class=sf-dump-key>PHP_SELF</span>" => "<span class=sf-dump-str title="21 characters">/index.php/serverinfo</span>"
+    "<span class=sf-dump-key>HTTP_HOST</span>" => "<span class=sf-dump-str title="14 characters">127.0.0.1:8080</span>"
+    "<span class=sf-dump-key>HTTP_CONNECTION</span>" => "<span class=sf-dump-str title="10 characters">keep-alive</span>"
+    "<span class=sf-dump-key>HTTP_UPGRADE_INSECURE_REQUESTS</span>" => "<span class=sf-dump-str>1</span>"
+    "<span class=sf-dump-key>HTTP_USER_AGENT</span>" => "<span class=sf-dump-str title="115 characters">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36</span>"
+    "<span class=sf-dump-key>HTTP_ACCEPT</span>" => "<span class=sf-dump-str title="74 characters">text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</span>"
+    "<span class=sf-dump-key>HTTP_REFERER</span>" => "<span class=sf-dump-str title="28 characters">http://127.0.0.1:8080/routes</span>"
+    "<span class=sf-dump-key>HTTP_ACCEPT_ENCODING</span>" => "<span class=sf-dump-str title="19 characters">gzip, deflate, sdch</span>"
+    "<span class=sf-dump-key>HTTP_ACCEPT_LANGUAGE</span>" => "<span class=sf-dump-str title="56 characters">en-US,en;q=0.8,th;q=0.6,zh-CN;q=0.4,zh;q=0.2,zh-TW;q=0.2</span>"
+    "<span class=sf-dump-key>HTTP_COOKIE</span>" => "<span class=sf-dump-str title="76 characters">_ga=GA1.1.836691509.1471520014; token=; PHPSESSID=6ru8voeb0u0811102i4pe6h7m1</span>"
+    "<span class=sf-dump-key>REQUEST_TIME_FLOAT</span>" => <span class=sf-dump-num>1475475220.5703</span>
+    "<span class=sf-dump-key>REQUEST_TIME</span>" => <span class=sf-dump-num>1475475220</span>
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">method</span>: "<span class=sf-dump-str title="3 characters">GET</span>"
+  #<span class=sf-dump-protected title="Protected property">request</span>: <span class=sf-dump-note>array:1</span> [<samp>
+    <span class=sf-dump-index>0</span> => ""
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">qrystr</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">input</span>: {<a class=sf-dump-ref>#3</a>}
+  #<span class=sf-dump-protected title="Protected property">inputarr</span>: []
+  #<span class=sf-dump-protected title="Protected property">qrypath</span>: "<span class=sf-dump-str title="11 characters">/serverinfo</span>"
+  #<span class=sf-dump-protected title="Protected property">reqs</span>: []
+  #<span class=sf-dump-protected title="Protected property">uri</span>: <span class=sf-dump-note>array:2</span> [<samp>
+    <span class=sf-dump-index>0</span> => "<span class=sf-dump-str title="9 characters">index.php</span>"
+    <span class=sf-dump-index>1</span> => "<span class=sf-dump-str title="10 characters">serverinfo</span>"
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">posts</span>: []
+  #<span class=sf-dump-protected title="Protected property">files</span>: []
+  #<span class=sf-dump-protected title="Protected property">sessiones</span>: []
+  #<span class=sf-dump-protected title="Protected property">cookie</span>: <span class=sf-dump-note>array:3</span> [<samp>
+    "<span class=sf-dump-key>_ga</span>" => "<span class=sf-dump-str title="26 characters">GA1.1.836691509.1471520014</span>"
+    "<span class=sf-dump-key>token</span>" => ""
+    "<span class=sf-dump-key>PHPSESSID</span>" => "<span class=sf-dump-str title="26 characters">6ru8voeb0u0811102i4pe6h7m1</span>"
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">maxtime</span>: <span class=sf-dump-num>0</span>
+  #<span class=sf-dump-protected title="Protected property">privateKey</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">publicKey</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">signer</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">format</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">loginpath</span>: "<span class=sf-dump-str title="10 characters">/index.php</span>"
+  #<span class=sf-dump-protected title="Protected property">useslug</span>: <span class=sf-dump-num>1</span>
+  #<span class=sf-dump-protected title="Protected property">response</span>: <span class=sf-dump-note>array:3</span> [<samp>
+    "<span class=sf-dump-key>code</span>" => <span class=sf-dump-num>0</span>
+    "<span class=sf-dump-key>status</span>" => <span class=sf-dump-num>404</span>
+    "<span class=sf-dump-key>data</span>" => <span class=sf-dump-const>null</span>
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">css</span>: ""
+  #<span class=sf-dump-protected title="Protected property">js</span>: ""
+  #<span class=sf-dump-protected title="Protected property">jslast</span>: ""
+  #<span class=sf-dump-protected title="Protected property">navbar</span>: ""
+  #<span class=sf-dump-protected title="Protected property">header</span>: ""
+  #<span class=sf-dump-protected title="Protected property">content</span>: ""
+  #<span class=sf-dump-protected title="Protected property">footer</span>: ""
+  #<span class=sf-dump-protected title="Protected property">htmlhead</span>: ""
+  #<span class=sf-dump-protected title="Protected property">htmlfooter</span>: "<span class=sf-dump-str title="14 characters">&lt;/body&gt;&lt;/html&gt;</span>"
+  #<span class=sf-dump-protected title="Protected property">appopt</span>: ""
+  #<span class=sf-dump-protected title="Protected property">menu</span>: ""
+  #<span class=sf-dump-protected title="Protected property">bladengine</span>: ""
+  #<span class=sf-dump-protected title="Protected property">production</span>: <span class=sf-dump-num>1</span>
+  #<span class=sf-dump-protected title="Protected property">javascript</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">backendbase</span>: "<span class=sf-dump-str title="9 characters">wordpress</span>"
+  #<span class=sf-dump-protected title="Protected property">http_response_code</span>: <span class=sf-dump-note>array:5</span> [<samp>
+    <span class=sf-dump-key>200</span> => "<span class=sf-dump-str title="2 characters">OK</span>"
+    <span class=sf-dump-key>400</span> => "<span class=sf-dump-str title="11 characters">Bad Request</span>"
+    <span class=sf-dump-key>401</span> => "<span class=sf-dump-str title="12 characters">Unauthorized</span>"
+    <span class=sf-dump-key>403</span> => "<span class=sf-dump-str title="9 characters">Forbidden</span>"
+    <span class=sf-dump-key>404</span> => "<span class=sf-dump-str title="9 characters">Not Found</span>"
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">HTTPS_required</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">authentication_required</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">api_response_code</span>: <span class=sf-dump-note>array:7</span> [<samp>
+    <span class=sf-dump-index>0</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>400</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="13 characters">Unknown Error</span>"
+    </samp>]
+    <span class=sf-dump-index>1</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>200</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="7 characters">Success</span>"
+    </samp>]
+    <span class=sf-dump-index>2</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>403</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="14 characters">HTTPS Required</span>"
+    </samp>]
+    <span class=sf-dump-index>3</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>401</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="23 characters">Authentication Required</span>"
+    </samp>]
+    <span class=sf-dump-index>4</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>401</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="21 characters">Authentication Failed</span>"
+    </samp>]
+    <span class=sf-dump-index>5</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>404</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="15 characters">Invalid Request</span>"
+    </samp>]
+    <span class=sf-dump-index>6</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>HTTP Response</span>" => <span class=sf-dump-num>400</span>
+      "<span class=sf-dump-key>Message</span>" => "<span class=sf-dump-str title="23 characters">Invalid Response Format</span>"
+    </samp>]
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">methodget</span>: <span class=sf-dump-note>array:13</span> [<samp>
+    <span class=sf-dump-index>0</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="7 characters">getTest</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="4 characters">test</span>"
+    </samp>]
+    <span class=sf-dump-index>1</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="11 characters">getRegister</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="8 characters">register</span>"
+    </samp>]
+    <span class=sf-dump-index>2</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="8 characters">getLogin</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="5 characters">login</span>"
+    </samp>]
+    <span class=sf-dump-index>3</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="6 characters">getGet</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="3 characters">get</span>"
+    </samp>]
+    <span class=sf-dump-index>4</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="6 characters">getVer</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="3 characters">ver</span>"
+    </samp>]
+    <span class=sf-dump-index>5</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="13 characters">getServerinfo</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="10 characters">serverinfo</span>"
+    </samp>]
+    <span class=sf-dump-index>6</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="6 characters">getJwt</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="3 characters">jwt</span>"
+    </samp>]
+    <span class=sf-dump-index>7</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="10 characters">getJwtInfo</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="7 characters">jwtinfo</span>"
+    </samp>]
+    <span class=sf-dump-index>8</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="11 characters">getInstance</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="8 characters">instance</span>"
+    </samp>]
+    <span class=sf-dump-index>9</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="9 characters">getSocket</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="6 characters">socket</span>"
+    </samp>]
+    <span class=sf-dump-index>10</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="15 characters">getSocketserver</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="12 characters">socketserver</span>"
+    </samp>]
+    <span class=sf-dump-index>11</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="5 characters">index</span>"
+      "<span class=sf-dump-key>path</span>" => ""
+    </samp>]
+    <span class=sf-dump-index>12</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="6 characters">routes</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="6 characters">routes</span>"
+    </samp>]
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">methodput</span>: []
+  #<span class=sf-dump-protected title="Protected property">methodpost</span>: <span class=sf-dump-note>array:4</span> [<samp>
+    <span class=sf-dump-index>0</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="7 characters">postPhp</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="3 characters">php</span>"
+    </samp>]
+    <span class=sf-dump-index>1</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="12 characters">postTestajax</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="8 characters">testajax</span>"
+    </samp>]
+    <span class=sf-dump-index>2</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="12 characters">postRegister</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="8 characters">register</span>"
+    </samp>]
+    <span class=sf-dump-index>3</span> => <span class=sf-dump-note>array:2</span> [<samp>
+      "<span class=sf-dump-key>method</span>" => "<span class=sf-dump-str title="9 characters">postLogin</span>"
+      "<span class=sf-dump-key>path</span>" => "<span class=sf-dump-str title="5 characters">login</span>"
+    </samp>]
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">methoddelete</span>: []
+  #<span class=sf-dump-protected title="Protected property">reservemethod</span>: <span class=sf-dump-note>array:10</span> [<samp>
+    <span class=sf-dump-index>0</span> => "<span class=sf-dump-str title="8 characters">getIndex</span>"
+    <span class=sf-dump-index>1</span> => "<span class=sf-dump-str title="9 characters">getcreate</span>"
+    <span class=sf-dump-index>2</span> => "<span class=sf-dump-str title="7 characters">getShow</span>"
+    <span class=sf-dump-index>3</span> => "<span class=sf-dump-str title="7 characters">getEdit</span>"
+    <span class=sf-dump-index>4</span> => "<span class=sf-dump-str title="9 characters">putUpdate</span>"
+    <span class=sf-dump-index>5</span> => "<span class=sf-dump-str title="9 characters">postStore</span>"
+    <span class=sf-dump-index>6</span> => "<span class=sf-dump-str title="13 characters">deleteDestroy</span>"
+    <span class=sf-dump-index>7</span> => "<span class=sf-dump-str title="9 characters">getRoutes</span>"
+    <span class=sf-dump-index>8</span> => "<span class=sf-dump-str title="6 characters">getAll</span>"
+    <span class=sf-dump-index>9</span> => "<span class=sf-dump-str title="9 characters">postLists</span>"
+  </samp>]
+  #<span class=sf-dump-protected title="Protected property">exptime</span>: <span class=sf-dump-num>3600</span>
+  #<span class=sf-dump-protected title="Protected property">token</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">secretKey</span>: "<span class=sf-dump-str title="36 characters">02443f12-e1ef-11e5-b86d-9a79f06e9478</span>"
+  #<span class=sf-dump-protected title="Protected property">socket</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">socketserver</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">hasSocket</span>: <span class=sf-dump-const>false</span>
+  #<span class=sf-dump-protected title="Protected property">model</span>: <span class=sf-dump-const>null</span>
+  #<span class=sf-dump-protected title="Protected property">modelwhere</span>: []
+  #<span class=sf-dump-protected title="Protected property">fills</span>: []
+  #<span class=sf-dump-protected title="Protected property">pk</span>: <span class=sf-dump-const>null</span>
+  +"<span class=sf-dump-public title="Runtime added dynamic property">cusheader</span>": <span class=sf-dump-note>array:4</span> [<samp>
+    <span class=sf-dump-index>0</span> => "<span class=sf-dump-str title="23 characters">X-Powered-By: PHP/5.5.0</span>"
+    <span class=sf-dump-index>1</span> => "<span class=sf-dump-str title="38 characters">Expires: Thu, 19 Nov 1981 08:52:00 GMT</span>"
+    <span class=sf-dump-index>2</span> => "<span class=sf-dump-str title="77 characters">Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0</span>"
+    <span class=sf-dump-index>3</span> => "<span class=sf-dump-str title="16 characters">Pragma: no-cache</span>"
+  </samp>]
+  +"<span class=sf-dump-public title="Runtime added dynamic property">appcheheader</span>": <span class=sf-dump-note>array:9</span> [<samp>
+    "<span class=sf-dump-key>HOST</span>" => "<span class=sf-dump-str title="14 characters">127.0.0.1:8080</span>"
+    "<span class=sf-dump-key>CONNECTION</span>" => "<span class=sf-dump-str title="10 characters">keep-alive</span>"
+    "<span class=sf-dump-key>UPGRADE-INSECURE-REQUESTS</span>" => "<span class=sf-dump-str>1</span>"
+    "<span class=sf-dump-key>USER-AGENT</span>" => "<span class=sf-dump-str title="115 characters">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36</span>"
+    "<span class=sf-dump-key>ACCEPT</span>" => "<span class=sf-dump-str title="74 characters">text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</span>"
+    "<span class=sf-dump-key>REFERER</span>" => "<span class=sf-dump-str title="28 characters">http://127.0.0.1:8080/routes</span>"
+    "<span class=sf-dump-key>ACCEPT-ENCODING</span>" => "<span class=sf-dump-str title="19 characters">gzip, deflate, sdch</span>"
+    "<span class=sf-dump-key>ACCEPT-LANGUAGE</span>" => "<span class=sf-dump-str title="56 characters">en-US,en;q=0.8,th;q=0.6,zh-CN;q=0.4,zh;q=0.2,zh-TW;q=0.2</span>"
+    "<span class=sf-dump-key>COOKIE</span>" => "<span class=sf-dump-str title="76 characters">_ga=GA1.1.836691509.1471520014; token=; PHPSESSID=6ru8voeb0u0811102i4pe6h7m1</span>"
+  </samp>]
+</samp>}
+</pre>
+<script>
+Sfdump("sf-dump-967705043")
+</script>
+</body>

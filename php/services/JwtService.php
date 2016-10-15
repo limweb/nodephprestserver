@@ -5,6 +5,7 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 class  JwtService extends RestfulServer {
 		protected $usedb = false;
+		protected $exptime = 30;
 		public function __construct() {
 			$this->useJwt = true;
 			$this->debug = true;
