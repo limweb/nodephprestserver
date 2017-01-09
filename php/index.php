@@ -14,7 +14,7 @@ class  IdxService extends RestfulServer {
 		}
 
 		public function index(){
-			echo 'IdxService';
+			echo 'IdxService',$this->language;
 		}
 
 	 	// public  function permalink($id=null) {

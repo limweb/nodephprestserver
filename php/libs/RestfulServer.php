@@ -28,7 +28,7 @@ class RestfulServer {
             public $root;
             public $rootPath;
             public $jsonAssoc = false;
-
+            protected $restdata;
             protected $map = array();
             protected $errorClasses = array();
             protected $cached;
@@ -43,13 +43,26 @@ class RestfulServer {
             protected $hasroot = false;
             protected $isdebug = false;   // debuf
             private   $start_time;  // use with debug to save total time
-            private   $version = '0.0.0.2/2016-10-11';
+            private   $version = '0.0.0.2/2016-10-11/multilang';
             protected $languages = ['th','en','cn','jp'];
             protected $language = '';
+            protected $defaultlang = '';
             protected $route = '';
             protected $fullroute = [];
             protected $routepath = [];
-            protected $routepages = ['products'=>'ProductService','about'=>'AboutService'];
+            protected $routepages = [
+                ];
+                // 'products'=>'ProductService',
+                // 'about'=>'AboutService',
+                // 'productdetail'=>'ProductdetailService',
+                // 'blog'=>'BlogService',
+                // 'contact'=>'ContactService',
+                // 'services'=>'SrvService',
+                // 'portfolio' => 'PortfolioService',
+                // 'contact-us' => 'ContactService',
+                // 'pricing'=>'PricingService',
+                // '404'=>'S404Service',
+                // 'shortcodes'=>'ShortcodeService',
             protected $classname = '';
             //----Server var -----------------------------
                 protected $host = '/';  
@@ -58,6 +71,7 @@ class RestfulServer {
                 protected $method  = null;
                 protected $request  = null;
                 protected $qrystr     = null;
+                protected $qrystrobj = null;
                 protected $input   = null;
                 protected $inputarr = [];
                 protected $qrypath = null;
@@ -264,6 +278,9 @@ class RestfulServer {
                 }
                 $this->root = $dir;
             //--------------- Rest Server ------------------ end -----
+            $this->restdata = new Restdata();
+            $this->restdata->aaaa = 'aaaaa';
+            $this->restdata->bbbb = 'testbbbb';
             $this->_init();
     }
 
@@ -353,18 +370,25 @@ class RestfulServer {
             $this->setStatus(200);
             if (in_array($this->uri[0], $this->languages)) {
                 $this->language = $this->uri[0];
+                $this->setSess('lang',$this->language);
                 (isset($this->uri[1]) ?  $this->route = $this->uri[1] : null );
                 ($this->route == '' ? $this->route = '/': null );
                 $this->routepathp[] = $this->uri[0];
                 array_shift($this->uri);
                 array_shift($this->request);
             } else {
-                $this->language = $this->languages[0];
+                if($this->isroot && $this->hasroot){
+                    $this->language = $this->languages[0];
+                    $this->setSess('lang',$this->language);
+                } else  {
+                    $this->language = $this->sessiones['lang'];
+                }
                 (isset($this->uri[0]) ?  $this->route = $this->uri[0] : null );
                 ($this->route == '' ? $this->route = '/': null );
             }
+            $this->defaultlang = $this->languages[0];
+            $this->setSess('defaultlang',$this->defaultlang);
 
-            $this->setSess('lang',$this->language);
             $this->setSess('route',$this->route);
             (!isset($this->request[0]) ? $this->request[0] = '' : null );
     }
@@ -410,7 +434,11 @@ class RestfulServer {
                      // $this->dump('x',$this->classname,$this->routepath);
                      array_shift($this->request);
                      $class =  $this->routepages[$this->route];
-                     require_once __DIR__.'/../'.$this->route.'.php';
+                     if(isset($this->server['DOCUMENT_ROOT'])){
+                        require_once $this->server['DOCUMENT_ROOT'].'/'.$this->route.'.php';
+                     } else {
+                        require_once __DIR__.'/../'.$this->route.'.php';
+                     }
                      if( isset($this->request[0]) ) {  $this->route = $this->request[0]; }
                      $tclass = new $class();
                      $tclass->make($this);
@@ -652,7 +680,7 @@ class RestfulServer {
         }
         // Set default HTTP response of 'ok'
         $this->method = $_SERVER['REQUEST_METHOD'];
-        $this->qrypath = filter_input(INPUT_SERVER, 'PATH_INFO');
+        $this->qrypath = ( filter_input(INPUT_SERVER, 'PATH_INFO') ? filter_input(INPUT_SERVER, 'PATH_INFO') : filter_input(INPUT_SERVER, 'REQUEST_URI'));
         $this->request = filter_input(INPUT_SERVER, 'PATH_INFO');
         $this->request =  rtrim($this->request,"\/");
         $this->request = explode("/", substr(@$this->request, 1));
@@ -669,6 +697,7 @@ class RestfulServer {
         if($this->inputarr == null ) $this->inputarr = [];
         $this->posts = $_POST;
         $this->reqs = $_REQUEST;
+        $this->qrystrobj = (object) $this->reqs;
         $this->cusheader = headers_list();
         if(!function_exists('apache_request_headers')){
             $arh = array();
@@ -972,7 +1001,7 @@ class RestfulServer {
     protected function setSess($key=null,$value=null) {
         if($key){
             $this->sessiones[$key] = $value;
-            $_SESSION['lang'] = $value;
+            $_SESSION[$key] = $value;
         } 
     }
 
@@ -994,7 +1023,7 @@ class RestfulServer {
     }   
 
     protected function megrevar($obj) {
-        $keys = ['usedb','useSocket','useJs','useJwt','isroot','isdebug','useslug','apikey','css','js','jslast','navbar','header','content','footer','htmlhead','ht[mlfooter','appopt','menu','production','javascript','backendbase','http_response_code','api_response_code','m[ethodget','methodput','methodpost','methoddelete','reservemethod','exptime','token','secretKey','model','modelwhere','fills','pk','php','classname'];
+        $keys = ['usedb','useSocket','useJs','useJwt','isroot','isdebug','useslug','apikey','css','js','jslast','navbar','header','content','footer','htmlhead','ht[mlfooter','appopt','menu','production','javascript','backendbase','http_response_code','api_response_code','m[ethodget','methodput','methodpost','methoddelete','reservemethod','exptime','token','secretKey','model','modelwhere','fills','pk','php','classname','language'];
         foreach( $obj as $k => $v ){
             if(!in_array($k,$keys)){
                 $this->$k = $v;
@@ -1422,6 +1451,27 @@ class RestException extends Exception {
     }
 }
 
+class Restdata {
+
+    protected $values;
+    
+     public function __construct($obj=null){
+        if($obj) {
+            $this->values = $obj;
+        } else {
+            $this->values = new stdClass();
+        }
+
+    }
+
+    public function __get($prop) {
+        return (isset($this->values->$prop) ? $this->values->$prop : null  );
+    }
+
+  public function __set( $prop, $value ) {
+         $this->values->$prop = $value;
+   }
+}
 //============================= Server run ======================================================= 
 // 1---------- extends this Server --------
 // $app = new  RestfulServer();
